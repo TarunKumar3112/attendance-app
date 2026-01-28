@@ -1,60 +1,110 @@
-import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import TopNav from "./ui/TopNav";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Card from "../ui/Card";
+import Toast from "../ui/Toast";
+import { login } from "../services/auth";
 
-import EmployeeLogin from "./pages/employee/EmployeeLogin";
-import EmployeeSignup from "./pages/employee/EmployeeSignup";
-import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
+export default function Login() {
+    const nav = useNavigate();
+    const [email, setEmail] = useState("");
+    const [pass, setPass] = useState("");
+    const [toast, setToast] = useState("");
+    const [loading, setLoading] = useState(false);
 
-import AdminLogin from "./pages/admin/AdminLogin";
-import AdminDashboard from "./pages/admin/AdminDashboard";
+    const onLogin = async () => {
+        try {
+            setLoading(true);
+            const user = await login({ email, pass });
 
-import { getSession } from "./services/storage";
+            if (user.role === "admin") {
+                nav("/admin/dashboard");
+            } else {
+                nav("/employee/dashboard");
+            }
+        } catch (e) {
+            setToast(e.message || "Login failed");
+            setTimeout(() => setToast(""), 2200);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-function RequireEmployee({ children }) {
-  const s = getSession();
-  if (s.type !== "employee") return <Navigate to="/employee/login" replace />;
-  return children;
-}
+    return (
+        <main className="page">
+            <section className="grid">
+                <Card title="Login" subtitle="Sign in to access your dashboard.">
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            onLogin();
+                        }}
+                        autoComplete="off"
+                    >
+                        <div className="grid2">
+                            <div>
+                                <label>Email</label>
+                                <input
+                                    name="login_email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="you@tronxlabs.com"
+                                    autoComplete="off"
+                                    autoCorrect="off"
+                                    autoCapitalize="none"
+                                    spellCheck={false}
+                                    required
+                                />
+                            </div>
 
-function RequireAdmin({ children }) {
-  const s = getSession();
-  if (s.type !== "admin") return <Navigate to="/admin/login" replace />;
-  return children;
-}
+                            <div>
+                                <label>Password</label>
+                                <input
+                                    name="login_pass"
+                                    type="password"
+                                    value={pass}
+                                    onChange={(e) => setPass(e.target.value)}
+                                    placeholder="••••••••"
+                                    autoComplete="new-password"
+                                    autoCorrect="off"
+                                    autoCapitalize="none"
+                                    spellCheck={false}
+                                    required
+                                />
+                            </div>
+                        </div>
 
-export default function App() {
-  const session = getSession(); // ✅ read session once for TopNav
+                        <div className="row mt12">
+                            <button className="btn btnPrimary" type="submit" disabled={loading}>
+                                {loading ? "Signing in..." : "Login"}
+                            </button>
+                        </div>
+                    </form>
 
-  return (
-    <>
-      <TopNav session={session} /> {/* ✅ pass session */}
-      <Routes>
-        <Route path="/" element={<Navigate to="/employee/login" replace />} />
+                    <div className="hr" />
 
-        <Route path="/employee/login" element={<EmployeeLogin />} />
-        <Route path="/employee/signup" element={<EmployeeSignup />} />
-        <Route
-          path="/employee/dashboard"
-          element={
-            <RequireEmployee>
-              <EmployeeDashboard />
-            </RequireEmployee>
-          }
-        />
+                    <div className="muted small">
+                        New employee?{" "}
+                        <button className="linkBtn" onClick={() => nav("/employee/signup")}>
+                            Create an account
+                        </button>
+                    </div>
+                </Card>
 
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route
-          path="/admin/dashboard"
-          element={
-            <RequireAdmin>
-              <AdminDashboard />
-            </RequireAdmin>
-          }
-        />
+                <Card
+                    title="Attendance System"
+                    subtitle="One portal for everyone."
+                >
+                    <div className="muted small" style={{ lineHeight: 1.7 }}>
+                        • Employees can mark attendance and view logs.
+                        <br />
+                        • Admins can monitor team status and location.
+                        <br />
+                        • Secure and automated tracking.
+                    </div>
+                </Card>
+            </section>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </>
-  );
+            <Toast message={toast} />
+        </main>
+    );
 }
