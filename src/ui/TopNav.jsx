@@ -4,34 +4,36 @@ import { getSession } from "../services/storage";
 
 export default function TopNav() {
   const nav = useNavigate();
-
-  const go = (path) => nav(path);
-
-  // Your app uses session.type: "employee" | "admin"
   const s = getSession();
   const isLoggedIn = s?.type === "employee" || s?.type === "admin";
+  const userName = s?.userName;
 
   return (
     <header className="nav">
-      <div className="navInner">
-        <div className="brand">
-          tronXlabs <small>• Attendance Beta</small>
+      <div className="nav-inner">
+        <div className="brand" onClick={() => nav("/")}>
+          <div className="brand-logo">T</div>
+          <span className="brand-name">Tronx<span>Labs</span></span>
         </div>
 
-        <div className="navLinks">
-          {/* ✅ Show Employee/Admin only BEFORE login */}
+        <div className="nav-links">
           {!isLoggedIn && (
             <>
-              <button className="chip" onClick={() => go("/employee/login")}>
+              <button className="nav-chip" onClick={() => nav("/employee/login")}>
                 Employee
               </button>
-              <button className="chip" onClick={() => go("/admin/login")}>
+              <button className="nav-chip" onClick={() => nav("/admin/login")}>
                 Admin
               </button>
             </>
           )}
 
-          {/* ✅ Removed: Reset + Get Started */}
+          {isLoggedIn && userName && (
+            <div className="nav-user">
+              <div className="nav-avatar">{userName.charAt(0).toUpperCase()}</div>
+              <span>{userName}</span>
+            </div>
+          )}
         </div>
       </div>
     </header>
